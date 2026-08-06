@@ -41,6 +41,38 @@
   body.panel-open #search { right: 364px; }
   body.panel-open #hint { opacity: 0; }
 
+  #settings {
+    position: fixed; top: 56px; right: 24px; z-index: 3; width: 200px;
+    max-height: calc(100vh - 96px); overflow-y: auto;
+    background: color-mix(in srgb, var(--panel) 72%, transparent);
+    border: 1px solid var(--panel); border-radius: 6px;
+    backdrop-filter: blur(8px); transition: right .22s ease;
+    font-size: 11.5px;
+  }
+  body.panel-open #settings { right: 364px; }
+  #settings details + details { border-top: 1px solid color-mix(in srgb, var(--muted) 25%, transparent); }
+  #settings summary {
+    cursor: pointer; user-select: none; padding: 8px 11px;
+    font-size: 10px; letter-spacing: .12em; text-transform: uppercase;
+    color: var(--muted); font-weight: 600;
+  }
+  #settings summary:hover { color: var(--text); }
+  #settings .sec { padding: 2px 11px 10px; }
+  #settings .row { display: flex; align-items: center; justify-content: space-between;
+    gap: 8px; margin: 0 0 3px; }
+  #settings .row + input { margin-bottom: 9px; }
+  #settings .val { color: var(--muted); font-size: 10px;
+    font-family: ui-monospace, "SF Mono", Menlo, monospace; }
+  #settings input[type=range] { display: block; width: 100%; height: 14px; accent-color: var(--accent); }
+  #settings input[type=checkbox] { accent-color: var(--accent); margin: 0; }
+  #settings .row:has(input[type=checkbox]) { margin-bottom: 9px; }
+  #settings button {
+    width: 100%; margin-top: 2px; padding: 5px; cursor: pointer;
+    background: color-mix(in srgb, var(--muted) 25%, transparent);
+    color: var(--text); border: 0; border-radius: 4px; font: inherit; font-size: 11px;
+  }
+  #settings button:hover { background: color-mix(in srgb, var(--accent) 45%, transparent); }
+
   #legend { position: fixed; bottom: 22px; left: 24px; z-index: 3; display: flex; flex-direction: column; gap: 7px; }
   .lg { display: flex; align-items: center; gap: 8px; font-size: 11.5px; color: var(--text);
         cursor: pointer; user-select: none; opacity: .9; }
@@ -85,6 +117,7 @@
 
 <div id="head"><h1 id="title"></h1><div id="stats"></div></div>
 <input id="search" placeholder="filter…" autocomplete="off" spellcheck="false">
+<div id="settings"></div>
 <div id="legend"></div>
 
 <div id="panel">
@@ -111,6 +144,8 @@ let query = "";
 const hidden = new Set();
 let heat = 1, fitted = false, labelOrder = [];
 let BG = "#0d0a1e", LINK = "#5c5480", TEXT = "#ece9f7", ACCENT = "#ff1f6b";
+// Remembered so the duotone toggle has something to switch back on.
+let duotoneColors = ["#ff1f6b", "#00d4ff"];
 
 const cv = document.getElementById("c");
 const ctx = cv.getContext("2d");
@@ -144,6 +179,7 @@ function apply(data) {
   root.setProperty("--accent", t.colors.accent);
   BG = t.colors.bg; LINK = t.colors.link; TEXT = t.colors.text; ACCENT = t.colors.accent;
   feel = t.feel;
+  duotoneColors = feel.duotone || [t.colors.accent, t.colors.link];
   colors = data.colors;
   groups = data.groups;
 
@@ -175,17 +211,24 @@ function apply(data) {
     n.vx = 0; n.vy = 0;
     n.i = i;
     n.color = n.ghost ? t.colors.muted : (colors[n.group] || t.colors.muted);
-    n.r = (3.5 + Math.sqrt(n.deg) * 2.6) * feel.node_scale;
     // A note with few links has nothing pulling it back against the repulsion, so
     // it drifts off. The fewer links, the harder the centre holds onto it; a note
     // with none at all gets its own anchor or it sails off the canvas.
     n.pull = n.deg ? 1 + 3 / (1 + n.deg) : 10;
   });
+  sizeNodes();
   labelOrder = [...nodes].sort((a, b) => b.deg - a.deg);
 
   document.getElementById("stats").textContent =
     nodes.length + " notes · " + links.length + " links · " + data.generated;
   buildLegend();
+  buildSettings();
+}
+
+/** Radius follows link count, scaled by the node_size setting. Recomputed rather
+ *  than scaled in the draw loop, because picking reads n.r too. */
+function sizeNodes() {
+  for (const n of nodes) n.r = (3.5 + Math.sqrt(n.deg) * 2.6) * feel.node_scale;
 }
 
 function mulberry32(a) {
@@ -467,6 +510,100 @@ function buildLegend() {
     };
     legend.appendChild(row);
   }
+}
+
+// ---- settings ----
+// Every control edits a live variable in place. The theme and the config's
+// [physics] block are the starting values; nothing here is written back to them,
+// so a refresh returns to what the files say.
+const SECTIONS = [
+  {
+    title: "Display",
+    items: [
+      { label: "Node size", min: 0.3, max: 3, step: 0.05,
+        get: () => feel.node_scale, set: (v) => { feel.node_scale = v; sizeNodes(); } },
+      { label: "Label size", min: 7, max: 22, step: 0.5,
+        get: () => feel.label_size, set: (v) => feel.label_size = v },
+      { label: "Link opacity", min: 0, max: 1, step: 0.02,
+        get: () => feel.link_opacity, set: (v) => feel.link_opacity = v },
+      { label: "Glow", toggle: true, get: () => feel.glow, set: (v) => feel.glow = v },
+      { label: "Halftone", toggle: true, get: () => feel.halftone, set: (v) => feel.halftone = v },
+      { label: "Duotone", toggle: true,
+        get: () => !!feel.duotone, set: (v) => feel.duotone = v ? duotoneColors : false },
+    ],
+  },
+  {
+    title: "Forces",
+    reheat: true,   // the layout has settled by now; a change means nothing without heat
+    items: [
+      { label: "Repel force", min: 500, max: 20000, step: 100,
+        get: () => REPEL, set: (v) => REPEL = v },
+      { label: "Link distance", min: 40, max: 600, step: 5,
+        get: () => LINK_LEN, set: (v) => LINK_LEN = v },
+      { label: "Link force", min: 0, max: 0.05, step: 0.0005,
+        get: () => LINK_K, set: (v) => LINK_K = v },
+      { label: "Center force", min: 0, max: 0.003, step: 0.00005,
+        get: () => CENTER_K, set: (v) => CENTER_K = v },
+      { label: "Damping", min: 0.5, max: 0.99, step: 0.01,
+        get: () => DAMP, set: (v) => DAMP = v },
+    ],
+  },
+];
+
+function buildSettings() {
+  const box = document.getElementById("settings");
+  box.innerHTML = "";
+  for (const sec of SECTIONS) {
+    const d = document.createElement("details");
+    d.innerHTML = "<summary>" + sec.title + "</summary>";
+    const body = document.createElement("div");
+    body.className = "sec";
+    for (const item of sec.items) body.appendChild(control(item, sec.reheat));
+    if (sec.reheat) {
+      const b = document.createElement("button");
+      b.textContent = "animate";
+      b.onclick = () => heat = 1;
+      body.appendChild(b);
+    }
+    d.appendChild(body);
+    box.appendChild(d);
+  }
+}
+
+function control(item, reheat) {
+  const wrap = document.createElement("div");
+  const row = document.createElement("div");
+  row.className = "row";
+  row.innerHTML = "<span>" + item.label + "</span>";
+  wrap.appendChild(row);
+
+  if (item.toggle) {
+    const box = document.createElement("input");
+    box.type = "checkbox";
+    box.checked = item.get();
+    box.onchange = () => { item.set(box.checked); if (reheat) heat = Math.max(heat, 0.3); };
+    row.appendChild(box);
+    return wrap;
+  }
+
+  const decimals = (String(item.step).split(".")[1] || "").length;
+  const val = document.createElement("span");
+  val.className = "val";
+  row.appendChild(val);
+
+  const slider = document.createElement("input");
+  slider.type = "range";
+  slider.min = item.min; slider.max = item.max; slider.step = item.step;
+  slider.value = item.get();
+  val.textContent = Number(slider.value).toFixed(decimals);
+  slider.oninput = () => {
+    const v = Number(slider.value);
+    val.textContent = v.toFixed(decimals);
+    item.set(v);
+    if (reheat) heat = Math.max(heat, 0.3);
+  };
+  wrap.appendChild(slider);
+  return wrap;
 }
 
 // Last line on purpose. In a standalone build BOOT is already set, so boot() runs
