@@ -19,6 +19,10 @@
 ![physics](https://img.shields.io/badge/physics-hand_rolled-ff1f6b?style=flat-square&labelColor=111111)
 ![license](https://img.shields.io/badge/license-MIT-111111?style=flat-square&labelColor=111111)
 
+<img src="docs/graph.png" alt="the demo vault as a force graph" width="100%">
+
+*the `demo/` vault in this repo — 51 notes about graph theory, drawn as a graph*
+
 </div>
 
 ---
@@ -48,6 +52,13 @@ http://localhost:4321   (ctrl-c to stop, refresh to re-read)
 [i] the one in the middle with 27 links is the one you should have split up
 ```
 
+## 📸 Evidence
+
+<img src="docs/focus.png" alt="one note focused, the rest of the graph dimmed" width="100%">
+
+click a note and everything it does not touch goes quiet. `node` is the busiest one
+in the demo vault — 5 links out, 13 in, and it took three sentences to define.
+
 ## 🕸️ The graph
 
 | | feature | what it actually does |
@@ -69,12 +80,18 @@ Needs [Bun](https://bun.sh). Nothing else.
 git clone https://github.com/nitrimandylis/nous.git
 cd nous
 bun run compile   # → ~/.bun/bin/nous, and man nous into your manpath
-nous ~/notes
+nous demo         # the vault in this repo, if you want to see it work first
+nous ~/notes      # yours
 man nous          # full reference, offline
 ```
 
 First run writes `~/.config/nous/config.toml` and the `spider-verse` theme. Set
 `dir` in the config and `nous` on its own serves it.
+
+`demo/` is 51 notes about graph theory that link to each other — a graph about
+graphs. It exists so the screenshots above are not a picture of somebody's
+private notes, and so `nous` has something to draw before you have configured
+anything. One note in it, `napkin-sketch`, deliberately links to nothing.
 
 There is a `nous-cli/SKILL.md` in the repo for agents driving the tool. `bun run
 compile` installs it if `~/.claude/skills` exists. Its whole job is the split that

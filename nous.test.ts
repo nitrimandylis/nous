@@ -138,10 +138,25 @@ test("duotone = false disables it rather than falling back to the default", () =
   expect(fromToml(Bun.TOML.parse(`[feel]\nduotone = false\n`)).feel.duotone).toBe(false);
 });
 
-test("unmapped groups take unused cycle colours, never a mapped one", () => {
+test("mapped groups keep their colour, unmapped ones never collide with them", () => {
   const t = fromToml(Bun.TOML.parse(BUILTIN_TOML));
   const map = colorMap(t, ["project", "wild", "loose"]);
-  expect(map.project).toBe("#00d4ff");
+  expect(map.project).toBe("#00d4ff");     // explicitly mapped
   expect(map.wild).not.toBe(map.loose);
-  expect(Object.values(t.groups)).not.toContain(map.wild);
+  expect(map.wild).not.toBe(map.project);  // free to reuse "feedback"'s colour: no feedback here
+  expect(map.loose).not.toBe(map.project);
+});
+
+test("a vault matching none of the theme's names still gets the good colours", () => {
+  // The failure this guards against: reserving every colour the theme mentions
+  // leaves an unrelated vault with only the dregs of the cycle.
+  const t = fromToml(Bun.TOML.parse(BUILTIN_TOML));
+  const map = colorMap(t, ["concept", "algorithm", "person", "dataset"]);
+  expect(Object.values(map)).toEqual(t.cycle.slice(0, 4));
+});
+
+test("more groups than colours wraps rather than going undefined", () => {
+  const t = fromToml(Bun.TOML.parse(`[groups]\ncycle = ["#111111", "#222222"]\n`));
+  const map = colorMap(t, ["a", "b", "c"]);
+  expect(Object.values(map).every((c) => typeof c === "string" && c.length > 0)).toBe(true);
 });

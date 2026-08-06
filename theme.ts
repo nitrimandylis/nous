@@ -120,14 +120,26 @@ export async function list(): Promise<string[]> {
   return [...names].sort();
 }
 
-/** Assign every group a colour: explicit mapping first, then the cycle in order. */
+/** Assign every group a colour: the theme's explicit mapping first, then the cycle
+ *  in order for anything it does not name.
+ *
+ *  Only colours claimed by a group *present in this graph* are skipped. Reserving
+ *  every colour the theme mentions would mean a vault whose groups happen not to
+ *  match the theme's names gets whatever is left over, which is how the good
+ *  colours end up unused and the graph ends up muddy. */
 export function colorMap(theme: Theme, groups: string[]): Record<string, string> {
-  const used = new Set(Object.values(theme.groups));
-  const spare = theme.cycle.filter((c) => !used.has(c));
   const out: Record<string, string> = {};
+  const taken = new Set(groups.map((g) => theme.groups[g]).filter(Boolean));
   let next = 0;
   for (const g of groups) {
-    out[g] = theme.groups[g] ?? spare[next++ % spare.length] ?? theme.cycle[0];
+    if (theme.groups[g]) {
+      out[g] = theme.groups[g];
+      continue;
+    }
+    while (next < theme.cycle.length && taken.has(theme.cycle[next])) next++;
+    out[g] = theme.cycle[next] ?? theme.cycle[next % theme.cycle.length] ?? theme.colors.accent;
+    taken.add(out[g]);
+    next++;
   }
   return out;
 }
