@@ -88,7 +88,9 @@ export function fromToml(raw: any): Theme {
       variant: pick(raw?.meta?.variant, DEFAULTS.meta.variant),
     },
     colors: { ...DEFAULTS.colors, ...(raw?.colors ?? {}) },
-    groups: Object.keys(groups).length ? groups : DEFAULTS.groups,
+    // No named groups means "colour everything from the cycle", not "use the
+    // builtin's names": a theme that pins nothing should look like itself.
+    groups,
     cycle,
     feel: {
       node_scale: pick(raw?.feel?.node_scale, DEFAULTS.feel.node_scale),

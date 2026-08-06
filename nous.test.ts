@@ -172,3 +172,8 @@ test("more groups than colours wraps rather than going undefined", () => {
   const map = colorMap(t, ["a", "b", "c"]);
   expect(Object.values(map).every((c) => typeof c === "string" && c.length > 0)).toBe(true);
 });
+
+test("a theme that pins no group falls to its own cycle, not the builtin's", () => {
+  const t = fromToml(Bun.TOML.parse(`[groups]\ncycle = ["#111111", "#222222"]\n`));
+  expect(colorMap(t, ["project", "feedback"])).toEqual({ feedback: "#111111", project: "#222222" });
+});
