@@ -52,13 +52,6 @@ http://localhost:4321   (ctrl-c to stop, refresh to re-read)
 [i] the one in the middle with 27 links is the one you should have split up
 ```
 
-## 📸 Evidence
-
-<img src="docs/focus.png" alt="one note focused, the rest of the graph dimmed" width="100%">
-
-click a note and everything it does not touch goes quiet. `node` is the busiest one
-in the demo vault — 5 links out, 13 in, and it took three sentences to define.
-
 ## 🕸️ The graph
 
 | | feature | what it actually does |
