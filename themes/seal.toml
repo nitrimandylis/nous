@@ -1,0 +1,26 @@
+# seal — converted from the swatch palette of the same name.
+# Edit freely: nous never reads swatch, this file is the whole theme.
+
+[meta]
+name = "Seal"
+variant = "dark"
+
+[colors]
+bg     = "#1a1a1a"
+panel  = "#212121"
+text   = "#ffffff"
+muted  = "#888888"
+accent = "#f56b3f"
+link   = "#4d4d4d"
+
+[groups]
+# name a group here to pin its colour, e.g.  project = "#ff0000"
+cycle = ["#85b9b9", "#bf94ab", "#94b37f", "#dfa95e", "#85a5c6", "#ff8a63", "#6fa3a3", "#a97f96"]
+
+[feel]
+node_scale   = 1.0
+label_size   = 11
+link_opacity = 0.26
+glow         = true
+halftone     = false
+duotone      = false

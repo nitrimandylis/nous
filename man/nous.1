@@ -119,8 +119,17 @@ a pair of colours printed slightly out of register behind each node, or
 .B false
 to switch it off).
 .PP
-.B spider\-verse
-is written out on first run. Copy it to make your own.
+Eleven themes are written out on first run:
+.BR batman\-jazz ", " catppuccin ", " firewatch ", " mafia ", " mclaren ", "
+.BR night\-city ", " nord ", " odyssey ", " seal ", " spider\-verse " and "
+.BR tokyo\-night .
+A later run adds any that are missing, and never overwrites one that exists, so
+an edited theme survives an upgrade. Copy one to make your own.
+.PP
+Groups the theme does not name take colours from
+.B cycle
+in alphabetical order of group name, so writing more notes never repaints the
+groups that were already there.
 .SH JSON OUTPUT
 .TP
 .B build \-\-json

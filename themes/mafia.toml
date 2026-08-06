@@ -1,0 +1,26 @@
+# mafia — converted from the swatch palette of the same name.
+# Edit freely: nous never reads swatch, this file is the whole theme.
+
+[meta]
+name = "Mafia"
+variant = "dark"
+
+[colors]
+bg     = "#050609"
+panel  = "#0a0b10"
+text   = "#e7e9ee"
+muted  = "#8b8f9c"
+accent = "#ff2a2a"
+link   = "#8b8f9c"
+
+[groups]
+# name a group here to pin its colour, e.g.  project = "#ff0000"
+cycle = ["#5fb3b3", "#d4556f", "#3dff6e", "#e0a000", "#6d92bb", "#ff2a2a", "#3f8a8a", "#9c3a52"]
+
+[feel]
+node_scale   = 1.0
+label_size   = 11
+link_opacity = 0.26
+glow         = true
+halftone     = true
+duotone      = false

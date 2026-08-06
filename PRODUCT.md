@@ -17,9 +17,17 @@ Obsidian's graph view, as a command, on any directory.
 - **Generic, not personal.** It reads any vault. The memory store it was written
   for is just what `dir` points at. No personal paths in the shipped scaffold.
 - **Own theme format, not swatch's.** Considered reading
-  `~/.config/swatch/themes/<name>/palette.toml` for ten free themes and a desktop
-  that reskins the graph. Rejected: it couples a public tool to another tool's
-  file layout and leaves a stranger with no themes at all.
+  `~/.config/swatch/themes/<name>/palette.toml` live, for free themes and a
+  desktop that reskins the graph. Rejected: it couples a public tool to another
+  tool's file layout and leaves a stranger with no themes at all. Instead the
+  eleven swatch palettes were **converted once** into `themes/*.toml` and are
+  maintained here. Nothing at runtime knows swatch exists. The mapping was
+  `roles.base/surface/text/muted/accent` → `colors`, bright ANSI black → `link`,
+  and the bright ANSI hues in hue order → `cycle`. Re-converting means editing
+  the palettes by hand; they change about never.
+- **Only spider-verse and night-city keep the duotone**, and only spider-verse and
+  mafia the halftone. Both effects are print artefacts; on a theme that is not
+  built around one they read as a rendering bug.
 - **Re-read per request, no watcher.** The page fetches `/graph.json` and the
   server rescans on each call, so refresh is the update mechanism. A watcher and
   a socket would buy a graph that reshapes live, which is worth building only if
@@ -38,6 +46,10 @@ Obsidian's graph view, as a command, on any directory.
 - **Unmapped groups take the cycle in order**, skipping only colours claimed by a
   group present in *this* graph. Reserving every colour the theme names left an
   unrelated vault with the dregs, which is what the demo vault first looked like.
+- **Cycle colours are assigned in alphabetical order of group name**, not in the
+  order groups arrive, which is by frequency. Otherwise writing enough notes to
+  flip two groups' ranks repaints them both, and a colour has to mean the group,
+  not its size.
 - **`demo/` is 51 notes about graph theory.** It exists so the README screenshots
   are not a picture of private notes, and so the tool has something to draw before
   anything is configured. `napkin-sketch` is deliberately unlinked.

@@ -1,0 +1,26 @@
+# firewatch — converted from the swatch palette of the same name.
+# Edit freely: nous never reads swatch, this file is the whole theme.
+
+[meta]
+name = "Firewatch"
+variant = "dark"
+
+[colors]
+bg     = "#04041f"
+panel  = "#101a3d"
+text   = "#cfe9f7"
+muted  = "#6a7fa8"
+accent = "#c44fb0"
+link   = "#4b5878"
+
+[groups]
+# name a group here to pin its colour, e.g.  project = "#ff0000"
+cycle = ["#56d0f0", "#d97fc8", "#62c3ad", "#fedb01", "#59a5ea", "#e37490", "#1f9ec9", "#9c3a88"]
+
+[feel]
+node_scale   = 1.0
+label_size   = 11
+link_opacity = 0.26
+glow         = true
+halftone     = false
+duotone      = false

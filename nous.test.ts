@@ -3,7 +3,8 @@ import { mkdtemp, mkdir } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { matchGlob, parseFrontmatter, scan } from "./vault.ts";
-import { colorMap, fromToml, BUILTIN_TOML } from "./theme.ts";
+import { colorMap, fromToml, list, load } from "./theme.ts";
+import { BUILTINS, DEFAULT_THEME } from "./builtin.ts";
 
 const OPTS = { groupBy: "type", exclude: [] as string[], unresolved: false };
 
@@ -118,7 +119,7 @@ test("groups come back most-common first", async () => {
 });
 
 test("the shipped theme parses and fills every field", () => {
-  const t = fromToml(Bun.TOML.parse(BUILTIN_TOML));
+  const t = fromToml(Bun.TOML.parse(BUILTINS[DEFAULT_THEME]!));
   expect(t.colors.bg).toBe("#0d0a1e");
   expect(t.groups.project).toBe("#00d4ff");
   expect(t.groups.cycle).toBeUndefined();     // cycle is not a group
@@ -139,7 +140,7 @@ test("duotone = false disables it rather than falling back to the default", () =
 });
 
 test("mapped groups keep their colour, unmapped ones never collide with them", () => {
-  const t = fromToml(Bun.TOML.parse(BUILTIN_TOML));
+  const t = fromToml(Bun.TOML.parse(BUILTINS[DEFAULT_THEME]!));
   const map = colorMap(t, ["project", "wild", "loose"]);
   expect(map.project).toBe("#00d4ff");     // explicitly mapped
   expect(map.wild).not.toBe(map.loose);
@@ -150,9 +151,37 @@ test("mapped groups keep their colour, unmapped ones never collide with them", (
 test("a vault matching none of the theme's names still gets the good colours", () => {
   // The failure this guards against: reserving every colour the theme mentions
   // leaves an unrelated vault with only the dregs of the cycle.
-  const t = fromToml(Bun.TOML.parse(BUILTIN_TOML));
+  const t = fromToml(Bun.TOML.parse(BUILTINS[DEFAULT_THEME]!));
   const map = colorMap(t, ["concept", "algorithm", "person", "dataset"]);
-  expect(Object.values(map)).toEqual(t.cycle.slice(0, 4));
+  expect(map.algorithm).toBe(t.cycle[0]);   // alphabetical, not most-common-first
+  expect(map.concept).toBe(t.cycle[1]);
+  expect(map.dataset).toBe(t.cycle[2]);
+  expect(map.person).toBe(t.cycle[3]);
+});
+
+test("writing more notes never repaints the groups already there", () => {
+  // groups arrive most-common-first, so the order flips as a vault grows. Colour
+  // has to follow the name, or every note added reshuffles the legend.
+  const t = fromToml(Bun.TOML.parse(BUILTINS[DEFAULT_THEME]!));
+  const before = colorMap(t, ["concept", "algorithm"]);
+  const after = colorMap(t, ["algorithm", "concept"]);   // algorithm overtook concept
+  expect(after).toEqual(before);
+});
+
+test("every shipped theme parses, and disk wins over the shipped copy", async () => {
+  const names = Object.keys(BUILTINS);
+  expect(names.length).toBeGreaterThanOrEqual(11);
+  expect(names).toContain(DEFAULT_THEME);
+  for (const name of names) {
+    const t = fromToml(Bun.TOML.parse(BUILTINS[name]!));
+    expect(t.colors.bg).toMatch(/^#[0-9a-f]{6}$/i);
+    expect(t.colors.link).toMatch(/^#[0-9a-f]{6}$/i);
+    expect(t.cycle.length).toBeGreaterThanOrEqual(4);
+    expect(new Set(t.cycle).size).toBe(t.cycle.length);   // no duplicate colours
+    expect(t.meta.name.length).toBeGreaterThan(0);
+  }
+  expect(await list()).toEqual(expect.arrayContaining(names));
+  await expect(load("no-such-theme")).rejects.toThrow(/no theme/);
 });
 
 test("more groups than colours wraps rather than going undefined", () => {

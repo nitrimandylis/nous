@@ -1,0 +1,30 @@
+# spider-verse — converted from the swatch palette of the same name.
+# Edit freely: nous never reads swatch, this file is the whole theme.
+
+[meta]
+name = "Spider-Verse"
+variant = "dark"
+
+[colors]
+bg     = "#0d0a1e"
+panel  = "#171233"
+text   = "#ece9f7"
+muted  = "#8d86ac"
+accent = "#ff1f6b"
+link   = "#5c5480"
+
+[groups]
+project   = "#00d4ff"
+feedback  = "#ff1f6b"
+reference = "#3dffa8"
+user      = "#ffc93c"
+# any value not named above takes the next unused colour from cycle
+cycle = ["#00d4ff", "#ff1f6b", "#3dffa8", "#ffc93c", "#8b6cff", "#ff473c", "#00a8cc", "#d6155a"]
+
+[feel]
+node_scale   = 1.0
+label_size   = 11
+link_opacity = 0.26
+glow         = true
+halftone     = true
+duotone      = ["#ff1f6b", "#00d4ff"]

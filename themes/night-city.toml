@@ -1,0 +1,26 @@
+# night-city — converted from the swatch palette of the same name.
+# Edit freely: nous never reads swatch, this file is the whole theme.
+
+[meta]
+name = "Night City"
+variant = "dark"
+
+[colors]
+bg     = "#0c0a16"
+panel  = "#17122a"
+text   = "#e9e6f5"
+muted  = "#8b83a8"
+accent = "#fcee0a"
+link   = "#4e4670"
+
+[groups]
+# name a group here to pin its colour, e.g.  project = "#ff0000"
+cycle = ["#00f0ff", "#ff3ca8", "#4dffa0", "#fcee0a", "#5b8cff", "#ff4d6a", "#00a8b5", "#c4157a"]
+
+[feel]
+node_scale   = 1.0
+label_size   = 11
+link_opacity = 0.26
+glow         = true
+halftone     = false
+duotone      = ["#ff003c", "#00f0ff"]

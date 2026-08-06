@@ -1,0 +1,26 @@
+# tokyo-night — converted from the swatch palette of the same name.
+# Edit freely: nous never reads swatch, this file is the whole theme.
+
+[meta]
+name = "Tokyo Night"
+variant = "dark"
+
+[colors]
+bg     = "#1a1b26"
+panel  = "#24283b"
+text   = "#c0caf5"
+muted  = "#565f89"
+accent = "#7aa2f7"
+link   = "#414868"
+
+[groups]
+# name a group here to pin its colour, e.g.  project = "#ff0000"
+cycle = ["#7dcfff", "#bb9af7", "#9ece6a", "#e0af68", "#7aa2f7", "#f7768e"]
+
+[feel]
+node_scale   = 1.0
+label_size   = 11
+link_opacity = 0.26
+glow         = true
+halftone     = false
+duotone      = false

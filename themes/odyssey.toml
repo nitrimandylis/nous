@@ -1,0 +1,26 @@
+# odyssey — converted from the swatch palette of the same name.
+# Edit freely: nous never reads swatch, this file is the whole theme.
+
+[meta]
+name = "Odyssey"
+variant = "dark"
+
+[colors]
+bg     = "#070b12"
+panel  = "#0f1722"
+text   = "#e8e2d4"
+muted  = "#7c8899"
+accent = "#c98a3f"
+link   = "#4a5a6b"
+
+[groups]
+# name a group here to pin its colour, e.g.  project = "#ff0000"
+cycle = ["#4fc0b6", "#c4526f", "#57c48f", "#edc23f", "#4f9fbf", "#e8523f", "#2f8c86", "#8a3550"]
+
+[feel]
+node_scale   = 1.0
+label_size   = 11
+link_opacity = 0.26
+glow         = true
+halftone     = false
+duotone      = false

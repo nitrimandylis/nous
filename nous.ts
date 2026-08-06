@@ -6,6 +6,7 @@ import { mkdir } from "node:fs/promises";
 import pageAsset from "./page.html" with { type: "text" };
 import { scan, type Graph } from "./vault.ts";
 import * as themes from "./theme.ts";
+import { BUILTINS } from "./builtin.ts";
 import { CONFIG_DIR, CONFIG_FILE, THEMES_DIR, expand } from "./paths.ts";
 
 // `with { type: "text" }` makes Bun hand the file over as a string, and bundle it
@@ -87,12 +88,23 @@ function die(msg: string): never {
   process.exit(1);
 }
 
+/** Write the config on first run, and top up any shipped theme that is not on
+ *  disk. An existing file is never overwritten, so edits survive an upgrade and
+ *  a new version's themes still appear. */
 async function ensureConfig(): Promise<void> {
-  if (await Bun.file(CONFIG_FILE).exists()) return;
   await mkdir(THEMES_DIR, { recursive: true });
-  await Bun.write(CONFIG_FILE, SCAFFOLD);
-  await Bun.write(`${THEMES_DIR}/${themes.BUILTIN}.toml`, themes.BUILTIN_TOML);
-  console.error(`nous: wrote ${CONFIG_FILE}`);
+  if (!(await Bun.file(CONFIG_FILE).exists())) {
+    await Bun.write(CONFIG_FILE, SCAFFOLD);
+    console.error(`nous: wrote ${CONFIG_FILE}`);
+  }
+  const added: string[] = [];
+  for (const [name, toml] of Object.entries(BUILTINS)) {
+    const path = `${THEMES_DIR}/${name}.toml`;
+    if (await Bun.file(path).exists()) continue;
+    await Bun.write(path, toml);
+    added.push(name);
+  }
+  if (added.length) console.error(`nous: added ${added.length} themes to ${THEMES_DIR}`);
 }
 
 async function loadConfig(): Promise<Config> {

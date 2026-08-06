@@ -1,0 +1,26 @@
+# batman-jazz — converted from the swatch palette of the same name.
+# Edit freely: nous never reads swatch, this file is the whole theme.
+
+[meta]
+name = "Batman Jazz"
+variant = "dark"
+
+[colors]
+bg     = "#09090b"
+panel  = "#122031"
+text   = "#c5d3e0"
+muted  = "#5f7897"
+accent = "#e85a9c"
+link   = "#5f7897"
+
+[groups]
+# name a group here to pin its colour, e.g.  project = "#ff0000"
+cycle = ["#67aab8", "#e85a9c", "#94b586", "#dcc088", "#678dae", "#c85566", "#4a8f9e", "#b06a8f"]
+
+[feel]
+node_scale   = 1.0
+label_size   = 11
+link_opacity = 0.26
+glow         = true
+halftone     = false
+duotone      = false
