@@ -35,6 +35,12 @@ Obsidian's graph view, as a command, on any directory.
 - **The `boot()` call is the last line of `page.html`.** In a standalone build
   the data is already inlined, so `boot()` runs with no await to defer it, and
   anything declared below it would still be in its temporal dead zone.
+- **Unmapped groups take the cycle in order**, skipping only colours claimed by a
+  group present in *this* graph. Reserving every colour the theme names left an
+  unrelated vault with the dregs, which is what the demo vault first looked like.
+- **`demo/` is 51 notes about graph theory.** It exists so the README screenshots
+  are not a picture of private notes, and so the tool has something to draw before
+  anything is configured. `napkin-sketch` is deliberately unlinked.
 
 ## Known ceilings
 
@@ -44,6 +50,5 @@ Obsidian's graph view, as a command, on any directory.
 
 ## Where it's headed
 
-Nothing planned. Candidates if they ever earn it: watch-and-push for a live
-graph, and a demo vault so the README can carry a screenshot that is not a
-picture of someone's private notes.
+Nothing planned. The one candidate if it ever earns it: watch-and-push, so the
+graph reshapes on screen as notes are written instead of waiting for a refresh.
