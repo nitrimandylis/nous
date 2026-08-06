@@ -43,10 +43,7 @@ version you send to someone.
 Themes are TOML. They set the palette, the colour per note type, and the parts
 that are taste rather than data: node size, label size, glow, halftone, and a
 duotone offset that prints two plates slightly out of register behind every node.
-Eleven ship, converted from the [swatch](https://github.com/nitrimandylis/swatch)
-palettes of the same names, though nothing at runtime knows swatch exists. Only
-`spider-verse` and `night-city` keep the duotone, both being aesthetics built on a
-misregistered print in the first place.
+The shipped theme leans hard on that last one, for reasons that become obvious.
 
 ```console
 nick@nous:~$ nous ~/notes
@@ -62,20 +59,6 @@ http://localhost:4321   (ctrl-c to stop, refresh to re-read)
 click a note and everything it does not touch goes quiet. `node` is the busiest one
 in the demo vault — 5 links out, 13 in, and it took three sentences to define.
 
-<details>
-<summary>the same vault in four other themes</summary>
-
-| | |
-|---|---|
-| <img src="docs/theme-night-city.png" alt="night-city"> | <img src="docs/theme-mafia.png" alt="mafia"> |
-| `night-city` — arasaka yellow, and the only other theme that keeps the duotone tear | `mafia` — near-black noir, gold and green tells, halftone on |
-| <img src="docs/theme-nord.png" alt="nord"> | <img src="docs/theme-catppuccin.png" alt="catppuccin"> |
-| `nord` — the published spec, muted on slate | `catppuccin` — mocha, pastels on warm charcoal |
-
-eleven ship in total. `nous themes` lists them.
-
-</details>
-
 ## 🕸️ The graph
 
 | | feature | what it actually does |
@@ -86,9 +69,8 @@ eleven ship in total. `nous themes` lists them.
 | 04 | **label culling** | busiest notes claim label space first, anything that would overlap is dropped. zoom in and the rest come back |
 | 05 | **orphan anchoring** | a note with no links has nothing holding it against the repulsion, so it gets its own pull to the centre instead of sailing off the canvas |
 | 06 | **exclude globs** | an index note that links to everything renders as one hub with a spoke to every note. put it in `exclude` and the real structure appears |
-| 07 | **eleven themes** | toml files in `~/.config/nous/themes/`, the file name is the theme name. converted from [swatch](https://github.com/nitrimandylis/swatch) palettes, but standalone — nous never reads swatch. copy one and change the hexes |
-| 08 | **stable colours** | a group's colour follows its name, not how common it is. writing three more notes never repaints the legend |
-| 09 | **standalone build** | `nous build` inlines the graph into one html file. it opens anywhere and phones nowhere |
+| 07 | **themes** | toml files in `~/.config/nous/themes/`. the file name is the theme name. copy the shipped one and change the hexes |
+| 08 | **standalone build** | `nous build` inlines the graph into one html file. it opens anywhere and phones nowhere |
 
 ## 🚀 Run it
 
@@ -103,9 +85,8 @@ nous ~/notes      # yours
 man nous          # full reference, offline
 ```
 
-First run writes `~/.config/nous/config.toml` and all eleven themes into
-`~/.config/nous/themes/`. Set `dir` in the config and `nous` on its own serves it.
-An upgrade adds any new theme without touching one you have edited.
+First run writes `~/.config/nous/config.toml` and the `spider-verse` theme. Set
+`dir` in the config and `nous` on its own serves it.
 
 `demo/` is 51 notes about graph theory that link to each other — a graph about
 graphs. It exists so the screenshots above are not a picture of somebody's
@@ -135,7 +116,6 @@ flowchart LR
 | entry | `nous.ts` | flags, config, the four commands, the server |
 | reader | `vault.ts` | walks the directory, parses frontmatter, resolves links into a graph |
 | themes | `theme.ts` | loads a theme toml, fills the gaps, assigns a colour to every group |
-| shipped | `builtin.ts`, `themes/` | the eleven themes, embedded in the binary as text |
 | page | `page.html` | the whole renderer: force simulation, canvas, panel. embedded in the binary |
 
 The simulation is O(n²) repulsion in a `requestAnimationFrame` loop — every node

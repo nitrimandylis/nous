@@ -269,15 +269,11 @@ function fit(pad) {
 
 // ---- draw ----
 function halftone() {
-  // tinted from the theme's text colour, so it reads as texture on a light
-  // background too rather than as invisible white dots
-  ctx.globalAlpha = 0.028;
-  ctx.fillStyle = TEXT;
+  ctx.fillStyle = "rgba(255,255,255,0.028)";
   const gap = 22;
   for (let y = 0; y < H; y += gap) {
     for (let x = ((y / gap) % 2) * (gap / 2); x < W; x += gap) ctx.fillRect(x, y, 1.1, 1.1);
   }
-  ctx.globalAlpha = 1;
 }
 
 function draw() {

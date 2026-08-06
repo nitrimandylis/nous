@@ -60,11 +60,7 @@ every node with its `deg`, `in` and `out` arrays.
 - **Unresolved links are dropped silently** unless `unresolved = true`. A vault
   full of planned-but-unwritten notes will look sparser than it reads.
 - **Themes are files, and the file name is the theme name.** `theme = "x"` with no
-  `~/.config/nous/themes/x.toml` and no shipped theme of that name is an error,
-  not a fallback. Eleven ship; `nous themes --json` is the list.
-- **A theme on disk shadows the shipped one of the same name.** Editing a theme
-  and then wondering why an upgrade did not change it is the expected behaviour,
-  not a bug. Delete the file to get the shipped version back.
+  `~/.config/nous/themes/x.toml` is an error, not a fallback.
 - **stdout is the payload with `--json`, warnings go to stderr.** Do not parse
   stderr as JSON.
 
