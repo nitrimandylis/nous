@@ -126,12 +126,16 @@ export async function list(): Promise<string[]> {
  *  Only colours claimed by a group *present in this graph* are skipped. Reserving
  *  every colour the theme mentions would mean a vault whose groups happen not to
  *  match the theme's names gets whatever is left over, which is how the good
- *  colours end up unused and the graph ends up muddy. */
+ *  colours end up unused and the graph ends up muddy.
+ *
+ *  Assignment walks the groups in alphabetical order, not the order they arrive
+ *  in, which is by how common they are. A colour has to follow the name: writing
+ *  three more notes should never repaint the groups that were already there. */
 export function colorMap(theme: Theme, groups: string[]): Record<string, string> {
   const out: Record<string, string> = {};
   const taken = new Set(groups.map((g) => theme.groups[g]).filter(Boolean));
   let next = 0;
-  for (const g of groups) {
+  for (const g of [...groups].sort()) {
     if (theme.groups[g]) {
       out[g] = theme.groups[g];
       continue;

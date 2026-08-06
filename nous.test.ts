@@ -152,7 +152,19 @@ test("a vault matching none of the theme's names still gets the good colours", (
   // leaves an unrelated vault with only the dregs of the cycle.
   const t = fromToml(Bun.TOML.parse(BUILTIN_TOML));
   const map = colorMap(t, ["concept", "algorithm", "person", "dataset"]);
-  expect(Object.values(map)).toEqual(t.cycle.slice(0, 4));
+  expect(map.algorithm).toBe(t.cycle[0]);   // alphabetical, not most-common-first
+  expect(map.concept).toBe(t.cycle[1]);
+  expect(map.dataset).toBe(t.cycle[2]);
+  expect(map.person).toBe(t.cycle[3]);
+});
+
+test("writing more notes never repaints the groups already there", () => {
+  // groups arrive most-common-first, so the order flips as a vault grows. Colour
+  // has to follow the name, or every note added reshuffles the legend.
+  const t = fromToml(Bun.TOML.parse(BUILTIN_TOML));
+  const before = colorMap(t, ["concept", "algorithm"]);
+  const after = colorMap(t, ["algorithm", "concept"]);   // algorithm overtook concept
+  expect(after).toEqual(before);
 });
 
 test("more groups than colours wraps rather than going undefined", () => {
