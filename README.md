@@ -1,0 +1,121 @@
+```
+ ███╗   ██╗  ██████╗  ██╗   ██╗ ███████╗
+ ████╗  ██║ ██╔═══██╗ ██║   ██║ ██╔════╝
+ ██╔██╗ ██║ ██║   ██║ ██║   ██║ ███████╗
+ ██║╚██╗██║ ██║   ██║ ██║   ██║ ╚════██║
+ ██║ ╚████║ ╚██████╔╝ ╚██████╔╝ ███████║
+ ╚═╝  ╚═══╝  ╚═════╝   ╚═════╝  ╚══════╝
+```
+
+<div align="center">
+
+### `YOUR NOTES, AS A SHAPE`
+
+*point it at a folder of markdown. it follows the links and draws what it finds.*
+
+![runtime](https://img.shields.io/badge/runtime-bun-ff1f6b?style=flat-square&labelColor=111111)
+![deps](https://img.shields.io/badge/runtime_deps-0-00d4ff?style=flat-square&labelColor=111111)
+![network](https://img.shields.io/badge/network_calls-0-00d4ff?style=flat-square&labelColor=111111)
+![physics](https://img.shields.io/badge/physics-hand_rolled-ff1f6b?style=flat-square&labelColor=111111)
+![license](https://img.shields.io/badge/license-MIT-111111?style=flat-square&labelColor=111111)
+
+</div>
+
+---
+
+## 🧠 What is this
+
+Obsidian's graph view is the best thing in Obsidian and it only works on Obsidian
+vaults. `nous` is that view as a command: give it any directory of markdown, and
+it reads the frontmatter, follows every `[[wikilink]]` and relative markdown
+link, and serves the result as a force graph on localhost. One node per note,
+sized by how many links it has, coloured by whichever frontmatter field you say.
+
+It re-reads the directory on every request, so refreshing the browser shows the
+notes as they are now. `nous build` writes the same graph to a single HTML file
+with the data inlined — no server, no dependencies, no requests — which is the
+version you send to someone.
+
+Themes are TOML. They set the palette, the colour per note type, and the parts
+that are taste rather than data: node size, label size, glow, halftone, and a
+duotone offset that prints two plates slightly out of register behind every node.
+The shipped theme leans hard on that last one, for reasons that become obvious.
+
+```console
+nick@nous:~$ nous ~/notes
+notes — 98 notes, 224 links, Spider-Verse
+http://localhost:4321   (ctrl-c to stop, refresh to re-read)
+[i] the one in the middle with 27 links is the one you should have split up
+```
+
+## 🕸️ The graph
+
+| | feature | what it actually does |
+|---|---|---|
+| 01 | **link parsing** | reads `[[wikilinks]]` and markdown links to local `.md`, resolves them by basename or by path, and drops the ones pointing nowhere (`unresolved = true` draws them as ghosts) |
+| 02 | **colour by field** | `group_by` names a frontmatter field, or the literal `folder`. nested yaml still counts — a `type` under `metadata:` is found |
+| 03 | **focus mode** | hover a node and the rest of the graph goes quiet, leaving that note and everything it touches |
+| 04 | **label culling** | busiest notes claim label space first, anything that would overlap is dropped. zoom in and the rest come back |
+| 05 | **orphan anchoring** | a note with no links has nothing holding it against the repulsion, so it gets its own pull to the centre instead of sailing off the canvas |
+| 06 | **exclude globs** | an index note that links to everything renders as one hub with a spoke to every note. put it in `exclude` and the real structure appears |
+| 07 | **themes** | toml files in `~/.config/nous/themes/`. the file name is the theme name. copy the shipped one and change the hexes |
+| 08 | **standalone build** | `nous build` inlines the graph into one html file. it opens anywhere and phones nowhere |
+
+## 🚀 Run it
+
+Needs [Bun](https://bun.sh). Nothing else.
+
+```bash
+git clone https://github.com/nitrimandylis/nous.git
+cd nous
+bun run compile   # → ~/.bun/bin/nous, and man nous into your manpath
+nous ~/notes
+man nous          # full reference, offline
+```
+
+First run writes `~/.config/nous/config.toml` and the `spider-verse` theme. Set
+`dir` in the config and `nous` on its own serves it.
+
+There is a `nous-cli/SKILL.md` in the repo for agents driving the tool. `bun run
+compile` installs it if `~/.claude/skills` exists. Its whole job is the split that
+`--help` cannot express: `nous` starts a server and never exits, so an agent
+should hand that command to you and use `nous build --json` itself.
+
+## 🔩 Under the hood
+
+```mermaid
+flowchart LR
+    A[*.md] --> B[frontmatter + links]
+    B --> C[nodes and edges]
+    D[config.toml] --> C
+    E[theme.toml] --> F[colours + feel]
+    C --> G{{"/graph.json"}}
+    F --> G
+    G --> H[canvas force sim]
+```
+
+| layer | path | job |
+|---|---|---|
+| entry | `nous.ts` | flags, config, the four commands, the server |
+| reader | `vault.ts` | walks the directory, parses frontmatter, resolves links into a graph |
+| themes | `theme.ts` | loads a theme toml, fills the gaps, assigns a colour to every group |
+| page | `page.html` | the whole renderer: force simulation, canvas, panel. embedded in the binary |
+
+The simulation is O(n²) repulsion in a `requestAnimationFrame` loop — every node
+pushes every other node, every frame. At a few hundred notes that is nothing. At
+several thousand it wants a quadtree, and that is a problem for whoever writes
+notes that fast.
+
+**Stack:** Bun · TypeScript · canvas 2d · TOML · zero runtime dependencies
+
+---
+
+<div align="center">
+
+**[Nick Trimandylis](https://github.com/nitrimandylis)**
+
+`THE MAP IS NOT THE TERRITORY BUT IT IS EASIER TO LOOK AT`
+
+MIT licensed.
+
+</div>

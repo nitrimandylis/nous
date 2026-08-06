@@ -1,0 +1,474 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>nous</title>
+<style>
+  :root {
+    --bg: #0d0a1e; --panel: #1b1638; --text: #ece9f7;
+    --muted: #5c5480; --accent: #ff1f6b;
+  }
+  * { box-sizing: border-box; }
+  html, body { height: 100%; margin: 0; }
+  body {
+    background: var(--bg); color: var(--text);
+    font-family: ui-sans-serif, -apple-system, "Inter", "Helvetica Neue", sans-serif;
+    overflow: hidden;
+  }
+  canvas { display: block; cursor: grab; }
+  canvas.grabbing { cursor: grabbing; }
+
+  #head { position: fixed; top: 22px; left: 24px; z-index: 3; pointer-events: none; }
+  #head h1 {
+    margin: 0; font-size: 15px; font-weight: 600; letter-spacing: .14em; text-transform: uppercase;
+  }
+  #stats {
+    margin-top: 6px; font-size: 11px; color: var(--muted);
+    font-family: ui-monospace, "SF Mono", Menlo, monospace;
+  }
+
+  #search {
+    position: fixed; top: 20px; right: 24px; z-index: 3;
+    width: 200px; padding: 7px 11px;
+    background: color-mix(in srgb, var(--panel) 72%, transparent);
+    color: var(--text); border: 1px solid var(--panel); border-radius: 6px;
+    font: inherit; font-size: 12px; outline: none;
+    backdrop-filter: blur(8px); transition: right .22s ease;
+  }
+  #search:focus { border-color: var(--accent); }
+  #search::placeholder { color: var(--muted); }
+  body.panel-open #search { right: 364px; }
+  body.panel-open #hint { opacity: 0; }
+
+  #legend { position: fixed; bottom: 22px; left: 24px; z-index: 3; display: flex; flex-direction: column; gap: 7px; }
+  .lg { display: flex; align-items: center; gap: 8px; font-size: 11.5px; color: var(--text);
+        cursor: pointer; user-select: none; opacity: .9; }
+  .lg:hover { opacity: 1; }
+  .lg.off { opacity: .3; }
+  .lg .dot { width: 9px; height: 9px; border-radius: 50%; flex: none; }
+  .lg .n { color: var(--muted); font-family: ui-monospace, "SF Mono", Menlo, monospace; font-size: 10.5px; }
+
+  #panel {
+    position: fixed; top: 0; right: 0; bottom: 0; width: 340px; z-index: 4;
+    background: color-mix(in srgb, var(--bg) 90%, transparent); backdrop-filter: blur(14px);
+    border-left: 1px solid var(--panel);
+    padding: 64px 26px 26px; overflow-y: auto;
+    transform: translateX(100%); transition: transform .22s ease;
+  }
+  #panel.open { transform: translateX(0); }
+  #panel h2 { margin: 0 0 4px; font-size: 17px; font-weight: 600; line-height: 1.3; }
+  #panel .badge { display: inline-block; margin-bottom: 14px;
+    font-family: ui-monospace, "SF Mono", Menlo, monospace; font-size: 10px;
+    letter-spacing: .1em; text-transform: uppercase; }
+  #panel .desc { font-size: 13px; line-height: 1.6; color: var(--text); opacity: .8; margin: 0 0 22px; }
+  #panel h3 { margin: 0 0 8px; font-size: 10px; letter-spacing: .12em; text-transform: uppercase;
+    color: var(--muted); font-weight: 600; }
+  #panel ul { list-style: none; margin: 0 0 22px; padding: 0; }
+  #panel li { font-size: 12.5px; padding: 3px 0; color: var(--text); opacity: .8;
+    cursor: pointer; border-bottom: 1px solid color-mix(in srgb, var(--muted) 25%, transparent); }
+  #panel li:hover { color: var(--accent); opacity: 1; }
+  #close { position: absolute; top: 20px; right: 22px; background: none; border: 0;
+    color: var(--muted); font-size: 20px; line-height: 1; cursor: pointer; padding: 4px; }
+  #close:hover { color: var(--text); }
+
+  #hint { position: fixed; bottom: 22px; right: 24px; z-index: 3; font-size: 10.5px;
+    color: var(--muted); text-align: right; line-height: 1.7;
+    pointer-events: none; transition: opacity .2s ease; }
+  #err { position: fixed; inset: 0; display: none; place-items: center; z-index: 9;
+    background: var(--bg); color: var(--muted); font-size: 13px; text-align: center; padding: 40px; }
+  @media (max-width: 720px) { #panel { width: 100%; } #hint { display: none; } }
+</style>
+</head>
+<body>
+<canvas id="c"></canvas>
+
+<div id="head"><h1 id="title"></h1><div id="stats"></div></div>
+<input id="search" placeholder="filter…" autocomplete="off" spellcheck="false">
+<div id="legend"></div>
+
+<div id="panel">
+  <button id="close" aria-label="close">&times;</button>
+  <h2></h2><div class="badge"></div><p class="desc"></p>
+  <h3 class="out-h">links out</h3><ul class="out"></ul>
+  <h3 class="in-h">linked from</h3><ul class="in"></ul>
+</div>
+
+<div id="hint">
+  drag to pan · scroll to zoom · <b>f</b> to refit<br>
+  drag a node to pull it · click to open
+</div>
+<div id="err"></div>
+
+<script>
+// nous replaces this with the graph when building a standalone file; when served,
+// it stays null and the page fetches instead, so a refresh re-reads the vault.
+const BOOT = /*BOOT*/ null;
+
+let nodes = [], links = [], nbr = [], colors = {}, feel = {}, groups = [];
+let hover = null, selected = null, dragging = null;
+let query = "";
+const hidden = new Set();
+let heat = 1, fitted = false, labelOrder = [];
+let BG = "#0d0a1e", LINK = "#5c5480", TEXT = "#ece9f7", ACCENT = "#ff1f6b";
+
+const cv = document.getElementById("c");
+const ctx = cv.getContext("2d");
+const panel = document.getElementById("panel");
+let W = 0, H = 0, scale = 0.62, ox = 0, oy = 0;
+
+async function boot() {
+  let data;
+  try {
+    data = BOOT || await (await fetch("graph.json")).json();
+  } catch (e) {
+    const err = document.getElementById("err");
+    err.style.display = "grid";
+    err.textContent = "could not reach nous — is the server still running?";
+    return;
+  }
+  apply(data);
+  resize();
+  window.addEventListener("resize", resize);
+  ox = W / 2; oy = H / 2;
+  frame();
+}
+
+function apply(data) {
+  const t = data.theme;
+  const root = document.documentElement.style;
+  root.setProperty("--bg", t.colors.bg);
+  root.setProperty("--panel", t.colors.panel);
+  root.setProperty("--text", t.colors.text);
+  root.setProperty("--muted", t.colors.muted);
+  root.setProperty("--accent", t.colors.accent);
+  BG = t.colors.bg; LINK = t.colors.link; TEXT = t.colors.text; ACCENT = t.colors.accent;
+  feel = t.feel;
+  colors = data.colors;
+  groups = data.groups;
+
+  const p = data.physics || {};
+  if (p.repel !== undefined) REPEL = p.repel;
+  if (p.link_length !== undefined) LINK_LEN = p.link_length;
+  if (p.link_strength !== undefined) LINK_K = p.link_strength;
+  if (p.center !== undefined) CENTER_K = p.center;
+  if (p.damping !== undefined) DAMP = p.damping;
+
+  document.title = data.title + " · nous";
+  const h1 = document.getElementById("title");
+  h1.textContent = data.title;
+  if (feel.duotone) {
+    h1.style.textShadow = `-1.5px 0 ${feel.duotone[0]}, 1.5px 0 ${feel.duotone[1]}`;
+  }
+
+  nodes = data.nodes;
+  links = data.links;
+  nbr = nodes.map(() => new Set());
+  for (const l of links) { nbr[l.s].add(l.t); nbr[l.t].add(l.s); }
+
+  // deterministic start positions, so the same vault opens to the same picture
+  const rand = mulberry32(nodes.length * 7919 + links.length);
+  nodes.forEach((n, i) => {
+    const a = rand() * Math.PI * 2;
+    const r = 120 + rand() * 520;
+    n.x = Math.cos(a) * r; n.y = Math.sin(a) * r;
+    n.vx = 0; n.vy = 0;
+    n.i = i;
+    n.color = n.ghost ? t.colors.muted : (colors[n.group] || t.colors.muted);
+    n.r = (3.5 + Math.sqrt(n.deg) * 2.6) * feel.node_scale;
+    // A note with few links has nothing pulling it back against the repulsion, so
+    // it drifts off. The fewer links, the harder the centre holds onto it; a note
+    // with none at all gets its own anchor or it sails off the canvas.
+    n.pull = n.deg ? 1 + 3 / (1 + n.deg) : 10;
+  });
+  labelOrder = [...nodes].sort((a, b) => b.deg - a.deg);
+
+  document.getElementById("stats").textContent =
+    nodes.length + " notes · " + links.length + " links · " + data.generated;
+  buildLegend();
+}
+
+function mulberry32(a) {
+  return function () {
+    a |= 0; a = (a + 0x6D2B79F5) | 0;
+    let t = Math.imul(a ^ (a >>> 15), 1 | a);
+    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+}
+
+// ---- simulation ----
+// ponytail: O(n^2) repulsion. Fine to a few hundred notes; past that this wants a
+// quadtree (Barnes-Hut) rather than a bigger constant.
+// Set from the config's [physics] block in apply().
+let REPEL = 5200, LINK_LEN = 190, LINK_K = 0.0075, CENTER_K = 0.00035, DAMP = 0.86;
+
+function step() {
+  if (heat < 0.002) return;
+  for (let i = 0; i < nodes.length; i++) {
+    const a = nodes[i];
+    for (let j = i + 1; j < nodes.length; j++) {
+      const b = nodes[j];
+      let dx = b.x - a.x, dy = b.y - a.y;
+      let d2 = dx * dx + dy * dy;
+      if (d2 < 1) { d2 = 1; dx = 0.5; dy = -0.5; }
+      const d = Math.sqrt(d2), f = REPEL / d2;
+      const fx = (dx / d) * f, fy = (dy / d) * f;
+      a.vx -= fx; a.vy -= fy; b.vx += fx; b.vy += fy;
+    }
+  }
+  for (const l of links) {
+    const a = nodes[l.s], b = nodes[l.t];
+    const dx = b.x - a.x, dy = b.y - a.y;
+    const d = Math.hypot(dx, dy) || 1;
+    const f = (d - LINK_LEN) * LINK_K;
+    const fx = (dx / d) * f, fy = (dy / d) * f;
+    a.vx += fx; a.vy += fy; b.vx -= fx; b.vy -= fy;
+  }
+  for (const n of nodes) {
+    if (n === dragging) continue;
+    n.vx -= n.x * CENTER_K * n.pull;
+    n.vy -= n.y * CENTER_K * n.pull;
+    n.vx *= DAMP; n.vy *= DAMP;
+    n.x += n.vx * heat; n.y += n.vy * heat;
+  }
+  heat *= 0.997;
+}
+
+// ---- view ----
+function resize() {
+  const dpr = window.devicePixelRatio || 1;
+  W = window.innerWidth; H = window.innerHeight;
+  cv.width = W * dpr; cv.height = H * dpr;
+  cv.style.width = W + "px"; cv.style.height = H + "px";
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+}
+const sx = (x) => x * scale + ox;
+const sy = (y) => y * scale + oy;
+
+function visible(n) { return !hidden.has(n.group); }
+function matches(n) { return !query || (n.name + " " + n.desc).toLowerCase().includes(query); }
+function lit(n) {
+  const focus = hover || selected;
+  if (!matches(n)) return false;
+  if (!focus) return true;
+  return n === focus || nbr[focus.i].has(n.i);
+}
+
+function fit(pad) {
+  const vis = nodes.filter(visible);
+  if (!vis.length) return;
+  const xs = vis.map((n) => n.x), ys = vis.map((n) => n.y);
+  const x0 = Math.min(...xs), x1 = Math.max(...xs);
+  const y0 = Math.min(...ys), y1 = Math.max(...ys);
+  scale = Math.min(4, Math.max(0.08,
+    Math.min((W - pad * 2) / (x1 - x0 || 1), (H - pad * 2) / (y1 - y0 || 1))));
+  ox = W / 2 - ((x0 + x1) / 2) * scale;
+  oy = H / 2 - ((y0 + y1) / 2) * scale;
+}
+
+// ---- draw ----
+function halftone() {
+  ctx.fillStyle = "rgba(255,255,255,0.028)";
+  const gap = 22;
+  for (let y = 0; y < H; y += gap) {
+    for (let x = ((y / gap) % 2) * (gap / 2); x < W; x += gap) ctx.fillRect(x, y, 1.1, 1.1);
+  }
+}
+
+function draw() {
+  ctx.fillStyle = BG;
+  ctx.fillRect(0, 0, W, H);
+  if (feel.halftone) halftone();
+  const focus = hover || selected;
+
+  ctx.lineWidth = 1;
+  for (const l of links) {
+    const a = nodes[l.s], b = nodes[l.t];
+    if (!visible(a) || !visible(b)) continue;
+    const on = focus && (a === focus || b === focus);
+    ctx.globalAlpha = focus ? (on ? 0.55 : 0.10) : feel.link_opacity;
+    ctx.strokeStyle = on ? ACCENT : LINK;
+    ctx.beginPath();
+    ctx.moveTo(sx(a.x), sy(a.y));
+    ctx.lineTo(sx(b.x), sy(b.y));
+    ctx.stroke();
+  }
+  ctx.globalAlpha = 1;
+
+  for (const n of nodes) {
+    if (!visible(n)) continue;
+    const x = sx(n.x), y = sy(n.y);
+    const r = Math.max(2, n.r * scale);
+    const on = lit(n);
+
+    if (on && feel.duotone && !n.ghost) {
+      // misregistered plates, sitting a little proud of the node so the edges show
+      const off = Math.max(1.8, 2.8 * scale), pr = r * 1.06;
+      ctx.globalAlpha = 0.45;
+      ctx.fillStyle = feel.duotone[0];
+      ctx.beginPath(); ctx.arc(x - off, y, pr, 0, 7); ctx.fill();
+      ctx.fillStyle = feel.duotone[1];
+      ctx.beginPath(); ctx.arc(x + off, y, pr, 0, 7); ctx.fill();
+      ctx.globalAlpha = 1;
+    }
+
+    if (n === focus && feel.glow) { ctx.shadowColor = n.color; ctx.shadowBlur = 22; }
+    ctx.globalAlpha = on ? (n.ghost ? 0.45 : 1) : 0.16;
+    ctx.fillStyle = n.color;
+    ctx.beginPath(); ctx.arc(x, y, r, 0, 7); ctx.fill();
+    ctx.shadowBlur = 0;
+
+    if (n === selected) {
+      ctx.strokeStyle = TEXT; ctx.lineWidth = 1.5;
+      ctx.beginPath(); ctx.arc(x, y, r + 4, 0, 7); ctx.stroke();
+    }
+    ctx.globalAlpha = 1;
+  }
+
+  // Labels last. Busiest notes get first claim on the space; anything that would
+  // land on a label already drawn is dropped. Zooming in makes room.
+  ctx.font = feel.label_size + "px ui-sans-serif, -apple-system, sans-serif";
+  ctx.textAlign = "center";
+  ctx.textBaseline = "top";
+  const taken = [];
+  for (const n of (focus ? [focus, ...labelOrder] : labelOrder)) {
+    if (!visible(n)) continue;
+    const x = sx(n.x), y = sy(n.y) + Math.max(2, n.r * scale) + 4;
+    const half = ctx.measureText(n.name).width / 2 + 3;
+    const box = [x - half, y - 2, x + half, y + feel.label_size + 2];
+    if (n !== focus && taken.some((b) =>
+      box[0] < b[2] && box[2] > b[0] && box[1] < b[3] && box[3] > b[1])) continue;
+    taken.push(box);
+    ctx.globalAlpha = lit(n) ? Math.min(1, 0.35 + scale) : 0.1;
+    ctx.fillStyle = n === focus ? TEXT : LINK;
+    ctx.fillText(n.name, x, y);
+  }
+  ctx.globalAlpha = 1;
+}
+
+function frame() {
+  step();
+  if (!fitted && heat < 0.45) { fit(110); fitted = true; }
+  draw();
+  requestAnimationFrame(frame);
+}
+
+// ---- picking ----
+function nodeAt(px, py) {
+  const mx = (px - ox) / scale, my = (py - oy) / scale;
+  let best = null, bestD = Infinity;
+  for (const n of nodes) {
+    if (!visible(n)) continue;
+    const d = Math.hypot(n.x - mx, n.y - my);
+    if (d < Math.max(n.r + 6, 12 / scale) && d < bestD) { best = n; bestD = d; }
+  }
+  return best;
+}
+
+// ---- interaction ----
+let panning = false, lastX = 0, lastY = 0, moved = 0;
+
+cv.addEventListener("mousedown", (e) => {
+  lastX = e.clientX; lastY = e.clientY; moved = 0;
+  const n = nodeAt(e.clientX, e.clientY);
+  if (n) { dragging = n; heat = Math.max(heat, 0.35); }
+  else { panning = true; cv.classList.add("grabbing"); }
+});
+
+window.addEventListener("mousemove", (e) => {
+  const dx = e.clientX - lastX, dy = e.clientY - lastY;
+  moved += Math.abs(dx) + Math.abs(dy);
+  lastX = e.clientX; lastY = e.clientY;
+  if (dragging) {
+    dragging.x += dx / scale; dragging.y += dy / scale;
+    dragging.vx = 0; dragging.vy = 0;
+  } else if (panning) { ox += dx; oy += dy; }
+  else {
+    hover = nodeAt(e.clientX, e.clientY);
+    cv.style.cursor = hover ? "pointer" : "grab";
+  }
+});
+
+window.addEventListener("mouseup", (e) => {
+  if (dragging && moved < 4) open(dragging);
+  else if (panning && moved < 4 && !nodeAt(e.clientX, e.clientY)) close();
+  dragging = null; panning = false;
+  cv.classList.remove("grabbing");
+});
+
+cv.addEventListener("wheel", (e) => {
+  e.preventDefault();
+  const ns = Math.min(4, Math.max(0.08, scale * Math.exp(-e.deltaY * 0.0016)));
+  ox = e.clientX - (e.clientX - ox) * (ns / scale);
+  oy = e.clientY - (e.clientY - oy) * (ns / scale);
+  scale = ns;
+}, { passive: false });
+
+// ---- panel ----
+function open(n) {
+  selected = n;
+  panel.classList.add("open");
+  document.body.classList.add("panel-open");
+  panel.querySelector("h2").textContent = n.name;
+  const badge = panel.querySelector(".badge");
+  badge.textContent = n.ghost ? "not written yet" : (n.group || "ungrouped");
+  badge.style.color = n.color;
+  panel.querySelector(".desc").textContent = n.desc || "";
+  fill(".out", ".out-h", n.out);
+  fill(".in", ".in-h", n.in);
+}
+function fill(ulSel, hSel, ids) {
+  const ul = panel.querySelector(ulSel), h = panel.querySelector(hSel);
+  ul.innerHTML = "";
+  h.style.display = ids.length ? "" : "none";
+  for (const id of ids) {
+    const li = document.createElement("li");
+    li.textContent = nodes[id].name;
+    li.onclick = () => { open(nodes[id]); focusOn(nodes[id]); };
+    ul.appendChild(li);
+  }
+}
+function focusOn(n) { ox = W / 2 - n.x * scale; oy = H / 2 - n.y * scale; }
+function close() {
+  selected = null;
+  panel.classList.remove("open");
+  document.body.classList.remove("panel-open");
+}
+document.getElementById("close").onclick = close;
+window.addEventListener("keydown", (e) => {
+  if (e.key === "Escape") close();
+  if (e.key === "f" && document.activeElement.id !== "search") fit(110);
+});
+
+document.getElementById("search").addEventListener("input", (e) => {
+  query = e.target.value.trim().toLowerCase();
+});
+
+function buildLegend() {
+  const counts = {};
+  for (const n of nodes) if (!n.ghost) counts[n.group] = (counts[n.group] || 0) + 1;
+  const legend = document.getElementById("legend");
+  legend.innerHTML = "";
+  for (const g of groups) {
+    if (!counts[g]) continue;
+    const row = document.createElement("div");
+    row.className = "lg";
+    row.innerHTML = '<span class="dot" style="background:' + colors[g] + '"></span>' +
+      "<span>" + g + '</span><span class="n">' + counts[g] + "</span>";
+    row.onclick = () => {
+      if (hidden.has(g)) hidden.delete(g); else hidden.add(g);
+      row.classList.toggle("off");
+      heat = Math.max(heat, 0.25);
+    };
+    legend.appendChild(row);
+  }
+}
+
+// Last line on purpose. In a standalone build BOOT is already set, so boot() runs
+// straight through with no await to defer it, and anything declared below here
+// would still be in its temporal dead zone when apply() reached for it.
+boot();
+</script>
+</body>
+</html>

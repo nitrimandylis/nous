@@ -1,0 +1,151 @@
+.TH NOUS 1 "2026-08-06" "nous 0.1.0" "User Commands"
+.SH NAME
+nous \- see a folder of linked notes as a graph
+.SH SYNOPSIS
+.B nous
+[\fIdir\fR]
+.br
+.B nous
+.I command
+[\fIargs\fR]
+[\fIoptions\fR]
+.SH DESCRIPTION
+.B nous
+reads every markdown file under a directory, follows the
+.B [[wikilinks]]
+and relative markdown links between them, and serves the result as a force graph
+on localhost. One node per note, sized by how many links it has, coloured by a
+frontmatter field of your choosing.
+.PP
+The page is re-read from disk on every request, so refreshing the browser shows
+the vault as it is now. Nothing is written to the vault and nothing leaves the
+machine.
+.SH COMMANDS
+.TP
+.B nous [\fIdir\fR]
+Serve the vault and open it in a browser. With no argument, serves the directory
+named by
+.B dir
+in the config.
+.TP
+.B build [\fIfile\fR]
+Write a standalone HTML file with the graph inlined, default
+.IR graph.html .
+The file has no dependencies and no network calls, so it can be opened or sent
+anywhere.
+.TP
+.B themes
+List installed themes. The active one is marked.
+.TP
+.B config
+Show the resolved settings and the paths they came from.
+.SH OPTIONS
+.TP
+.BI \-\-port " N"
+Port to serve on. Default 4321; if it is busy nous climbs until it finds a free
+one, up to 20 above.
+.TP
+.BI \-\-theme " NAME"
+Use this theme for one run, instead of the configured one.
+.TP
+.BI \-\-group\-by " FIELD"
+Colour by this frontmatter field, or by the literal
+.B folder
+to use the top-level folder instead.
+.TP
+.B \-\-no\-open
+Do not open a browser.
+.TP
+.B \-\-json
+Machine-readable output. Accepted by
+.BR build ", " themes " and " config .
+.TP
+.BR \-h ", " \-\-help
+Show help.
+.TP
+.BR \-v ", " \-\-version
+Show the version.
+.SH CONFIGURATION
+.I ~/.config/nous/config.toml
+is written on first run:
+.PP
+.RS
+.nf
+dir = "."
+group_by = "type"      # a frontmatter field, or "folder"
+exclude = []           # globs, against the path inside the vault
+theme = "spider-verse"
+port = 4321
+unresolved = false     # draw links to notes that do not exist
+
+[physics]
+repel = 5200
+link_length = 190
+link_strength = 0.0075
+center = 0.00035
+damping = 0.86
+.fi
+.RE
+.PP
+Set
+.B NOUS_CONFIG
+to use a different config directory.
+.PP
+An index note that links to every other note is worth putting in
+.BR exclude :
+it renders as a single hub with a spoke to everything and flattens the structure
+you were trying to see.
+.SH THEMES
+Themes are TOML files in
+.IR ~/.config/nous/themes/ .
+The file name is the theme name. A theme carries the palette
+.RB ( [colors] ),
+one colour per value of the
+.B group_by
+field
+.RB ( [groups] ,
+with a
+.B cycle
+list for values it does not name), and the look
+.RB ( [feel] :
+.BR node_scale ,
+.BR label_size ,
+.BR link_opacity ,
+.BR glow ,
+.BR halftone ,
+and
+.BR duotone ,
+a pair of colours printed slightly out of register behind each node, or
+.B false
+to switch it off).
+.PP
+.B spider\-verse
+is written out on first run. Copy it to make your own.
+.SH JSON OUTPUT
+.TP
+.B build \-\-json
+.B {file, bytes, notes, links}
+.TP
+.B themes \-\-json
+An array of
+.BR {name, title, variant, active} .
+.TP
+.B config \-\-json
+The resolved config, plus
+.BR dir ", " config_file " and " themes_dir .
+.SH KEYS
+In the browser: drag to pan, scroll to zoom,
+.B f
+to refit the view, click a node to open it,
+.B Escape
+to close the panel. Dragging a node pulls it and lets the rest settle around it.
+.SH FILES
+.TP
+.I ~/.config/nous/config.toml
+.TP
+.I ~/.config/nous/themes/
+.SH EXIT STATUS
+Non-zero on a missing directory, an unreadable config, an unknown theme, or no
+free port.
+.SH SEE ALSO
+.BR swatch (1)
