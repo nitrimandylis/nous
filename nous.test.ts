@@ -71,6 +71,19 @@ test("unresolved links are dropped by default and kept when asked", async () => 
   expect(withGhosts.links).toHaveLength(1);
 });
 
+test("notes carry an mtime, and a note that does not exist yet sorts after them", async () => {
+  const dir = await vault({ "old.md": "[[new]] [[ghost]]", "new.md": "hi" });
+  // written in the order above, so touching new.md again guarantees the gap
+  await Bun.write(join(dir, "new.md"), "hi again");
+
+  const { nodes } = await scan(dir, { ...OPTS, unresolved: true });
+  const by = Object.fromEntries(nodes.map((n) => [n.name, n]));
+  expect(by.old.mt).toBeGreaterThan(0);
+  expect(by.new.mt).toBeGreaterThanOrEqual(by.old.mt);
+  expect(by.ghost.ghost).toBe(true);
+  expect(by.ghost.mt).toBeGreaterThan(Math.max(by.old.mt, by.new.mt));
+});
+
 test("exclude keeps a hub note out of the graph entirely", async () => {
   const dir = await vault({
     "INDEX.md": "[[a]] [[b]]",

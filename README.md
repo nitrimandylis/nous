@@ -64,6 +64,7 @@ http://localhost:4321   (ctrl-c to stop, refresh to re-read)
 | 06 | **exclude globs** | an index note that links to everything renders as one hub with a spoke to every note. put it in `exclude` and the real structure appears |
 | 07 | **themes** | toml files in `~/.config/nous/themes/`. the file name is the theme name. copy the shipped one and change the hexes |
 | 08 | **standalone build** | `nous build` inlines the graph into one html file. it opens anywhere and phones nowhere |
+| 09 | **replay** | the two buttons under **Forces** rebuild the graph from an empty canvas over six seconds. `links` grows it outward from the busiest note, each one landing beside something it links to. `time` brings them in by mtime, the order you wrote them |
 
 ## 🚀 Run it
 

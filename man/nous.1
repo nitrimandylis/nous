@@ -150,6 +150,18 @@ knobs and the config's
 .B [physics]
 values. They edit the running graph only; a refresh returns to what the files
 say.
+.PP
+The two buttons under
+.B Forces
+replay the graph from an empty canvas over about six seconds, one note at a time.
+.B animate \(bu links
+grows it outward from the busiest note, so each note appears beside one it links
+to.
+.B animate \(bu time
+brings them in by file modification time, which is the order the vault was
+written in \(em though a vault that was cloned rather than written in place has
+every file stamped at checkout, and falls back to the link order.
+Panning or zooming during a replay stops the view refitting itself.
 .SH FILES
 .TP
 .I ~/.config/nous/config.toml

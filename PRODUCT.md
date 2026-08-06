@@ -38,6 +38,17 @@ Obsidian's graph view, as a command, on any directory.
 - **Unmapped groups take the cycle in order**, skipping only colours claimed by a
   group present in *this* graph. Reserving every colour the theme names left an
   unrelated vault with the dregs, which is what the demo vault first looked like.
+- **The reveal is a performance, not a layout mode.** The two `animate` buttons
+  replay the graph from nothing over a fixed six seconds, so a 50-note vault and a
+  500-note vault take the same time to watch. A note spawns beside the neighbour
+  that pulled it in, which is what makes it read as growth rather than arrival.
+  Pacing is wall-clock, so two replays of the same vault do not land on identical
+  positions — the boot layout is still deterministic, the replay is not.
+- **Reveal order by links, or by mtime.** Breadth-first from the busiest note is
+  the only order where every arrival after the first is already connected to
+  something on screen. mtime is the other story worth telling, the order the vault
+  was written in, and it degrades to the link order on ties — which is every note
+  in a vault that was cloned, since a checkout stamps them all at once.
 - **`demo/` is 51 notes about graph theory.** It exists so the README screenshots
   are not a picture of private notes, and so the tool has something to draw before
   anything is configured. `napkin-sketch` is deliberately unlinked.

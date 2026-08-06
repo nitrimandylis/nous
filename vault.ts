@@ -16,6 +16,7 @@ export type Node = {
   out: number[];
   in: number[];
   deg: number;
+  mt: number;         // file mtime in ms, for the time-ordered reveal
   ghost?: true;
 };
 
@@ -93,11 +94,12 @@ export async function scan(dir: string, opts: Options): Promise<Graph> {
   // A note is addressable by its basename and by its path without the extension,
   // because both forms show up in real vaults.
   const byKey = new Map<string, number>();
-  const notes: { rel: string; name: string; desc: string; group: string; targets: string[] }[] = [];
+  const notes: { rel: string; name: string; desc: string; group: string; mt: number; targets: string[] }[] = [];
   const fields = new Set<string>();
 
   for (const rel of paths) {
-    const text = await Bun.file(join(root, rel)).text();
+    const file = Bun.file(join(root, rel));
+    const text = await file.text();
     const { fields: fm, body } = parseFrontmatter(text);
     for (const k of Object.keys(fm)) fields.add(k);
 
@@ -121,12 +123,13 @@ export async function scan(dir: string, opts: Options): Promise<Graph> {
       group: opts.groupBy === "folder"
         ? (stem.includes("/") ? stem.split("/")[0] : "root")
         : (fm[opts.groupBy] || ""),
+      mt: file.lastModified,
       targets,
     });
   }
 
   const nodes: Node[] = notes.map((n) => ({
-    name: n.name, desc: n.desc, group: n.group, out: [], in: [], deg: 0,
+    name: n.name, desc: n.desc, group: n.group, mt: n.mt, out: [], in: [], deg: 0,
   }));
 
   // Ghost nodes are created lazily, and only when asked for, so an unresolved
@@ -137,7 +140,7 @@ export async function scan(dir: string, opts: Options): Promise<Graph> {
     if (i === undefined) {
       i = nodes.length;
       ghosts.set(key, i);
-      nodes.push({ name: basename(key), desc: "", group: "", out: [], in: [], deg: 0, ghost: true });
+      nodes.push({ name: basename(key), desc: "", group: "", mt: 0, out: [], in: [], deg: 0, ghost: true });
     }
     return i;
   };
@@ -162,6 +165,14 @@ export async function scan(dir: string, opts: Options): Promise<Graph> {
       nodes[t].deg++;
     }
   });
+
+  // A note that does not exist yet has no file to read a time off. Put it after
+  // every real note, so the time-ordered reveal shows it arriving behind whatever
+  // linked to it rather than ahead of the whole vault.
+  if (ghosts.size) {
+    const last = Math.max(0, ...notes.map((n) => n.mt));
+    for (const i of ghosts.values()) nodes[i].mt = last + 1;
+  }
 
   // Stable group order: most common first, so the legend and the colour cycle
   // both put the dominant kind of note at the top.
