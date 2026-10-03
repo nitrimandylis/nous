@@ -176,7 +176,7 @@ function warn(cfg: Config, data: Awaited<ReturnType<typeof payload>>) {
 async function serve(cfg: Config, dir: string, flags: Flags) {
   const first = flags.port ?? cfg.port;
   let server: ReturnType<typeof Bun.serve> | null = null;
-  for (let port = first; port < first + 20 && !server; port++) {
+  for (let port = first; port <= first + 20 && !server; port++) {
     try {
       server = Bun.serve({
         port,
@@ -197,7 +197,7 @@ async function serve(cfg: Config, dir: string, flags: Flags) {
       if (e?.code !== "EADDRINUSE") throw e;
     }
   }
-  if (!server) die(`ports ${first}-${first + 19} are all busy — try: nous --port 8080`);
+  if (!server) die(`ports ${first}-${first + 20} are all busy — try: nous --port 8080`);
 
   const data = await payload(cfg, dir);
   warn(cfg, data);

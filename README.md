@@ -74,7 +74,7 @@ Needs [Bun](https://bun.sh). Nothing else.
 git clone https://github.com/nitrimandylis/nous.git
 cd nous
 bun run compile   # → ~/.bun/bin/nous, and man nous into your manpath
-nous demo         # the vault in this repo, if you want to see it work first
+nous demo         # the vault in this repo (run from the repo root: "demo" is resolved against the current directory)
 nous ~/notes      # yours
 man nous          # full reference, offline
 ```

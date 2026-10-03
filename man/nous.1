@@ -117,10 +117,32 @@ and
 .BR duotone ,
 a pair of colours printed slightly out of register behind each node, or
 .B false
-to switch it off).
+to switch it off). An optional
+.B [meta]
+table gives the theme a display
+.B name
+(shown in the page header and as
+.B title
+in
+.BR "themes \-\-json" )
+and a
+.BR variant
+(a label such as
+.BR dark ;
+reported as
+.B variant
+in
+.BR "themes \-\-json" ).
+Both default to
+.B Spider\-Verse
+and
+.BR dark .
 .PP
 .B spider\-verse
-is written out on first run. Copy it to make your own.
+is written out on first run. Copy it to make your own. A missing theme file is
+an error, with one exception: the builtin
+.B spider\-verse
+still resolves from the copy compiled into nous if its file is deleted.
 .SH JSON OUTPUT
 .TP
 .B build \-\-json

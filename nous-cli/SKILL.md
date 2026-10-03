@@ -60,7 +60,8 @@ every node with its `deg`, `in` and `out` arrays.
 - **Unresolved links are dropped silently** unless `unresolved = true`. A vault
   full of planned-but-unwritten notes will look sparser than it reads.
 - **Themes are files, and the file name is the theme name.** `theme = "x"` with no
-  `~/.config/nous/themes/x.toml` is an error, not a fallback.
+  `~/.config/nous/themes/x.toml` is an error, not a fallback. The one exception is the
+  builtin `spider-verse`, which still resolves from the copy inside nous if its file is deleted.
 - **stdout is the payload with `--json`, warnings go to stderr.** Do not parse
   stderr as JSON.
 
